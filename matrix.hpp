@@ -33,5 +33,6 @@ template <class T> struct matrix_traits<MyMatrix<T>>
   static index_t rows(const MyMatrix<T> & m) { return m.rows; }
   static auto get(const MyMatrix<T> & m, index_t row, index_t col) { return m(row, col); }
   static void set(MyMatrix<T> & m, index_t row, index_t col, double val) { m(row, col) = val; }
+  static void resize(MyMatrix<T> & m, index_t rows, index_t cols) { m.resize(rows, cols); }
 };
 

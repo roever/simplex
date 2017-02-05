@@ -273,7 +273,7 @@ class SimplexSolver
       if (mode == SIMPLEX_MAXIMIZE)
       {
         // Maximize
-        tableau.resize(numberOfConstraints + 1, numberOfVariables + numberOfConstraints + 1);
+        matrix_traits<M>::resize(tableau, numberOfConstraints + 1, numberOfVariables + numberOfConstraints + 1);
 
         // Fill with zeros
         for (index_t i = 0; i < matrix_traits<M>::rows(tableau); i++)
@@ -300,7 +300,7 @@ class SimplexSolver
         if (foundSolution != SOL_NONE)
         {
           index_t constantColumn = matrix_traits<M>::columns(tableau) - 1;
-          solution.resize(numberOfVariables, 1);
+          matrix_traits<M>::resize(solution, numberOfVariables, 1);
 
           // Maximize
           for (index_t i = 0; i < numberOfVariables; i++)
@@ -324,7 +324,7 @@ class SimplexSolver
       else
       {
         // Minimize: construct the Dual problem
-        tableau.resize(numberOfVariables + 1, numberOfVariables + numberOfConstraints + 1);
+        matrix_traits<M>::resize(tableau, numberOfVariables + 1, numberOfVariables + numberOfConstraints + 1);
 
         for (index_t i = 0; i < matrix_traits<M>::rows(tableau); i++)
           for (index_t j = 0; j < matrix_traits<M>::columns(tableau); j++)
@@ -349,7 +349,7 @@ class SimplexSolver
 
         if (foundSolution != SOL_NONE)
         {
-          solution.resize(numberOfVariables, 1);
+          matrix_traits<M>::resize(solution, numberOfVariables, 1);
 
           // Minimize
           for (index_t i = 0; i < numberOfVariables; i++)
