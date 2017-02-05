@@ -1,54 +1,11 @@
 #include <iostream>
 #include <Eigen/Dense>
-#include "SimplexSolver.h"
-#include <vector>
+#include "solver.hpp"
+#include "eigen.hpp"
+#include "matrix.hpp"
 
 using namespace std;
 using namespace Eigen;
-
-
-
-class MyMatrix
-{
-  public:
-
-  int rows;
-  int columns;
-
-  std::vector<double> values;
-
-  double & operator()(int row, int col) { return values[row*columns+col]; }
-  const double & operator()(int row, int col) const { return values[row*columns+col]; }
-
-  void resize(int r, int c)
-  {
-    values.resize(c*r);
-    rows = r;
-    columns = c;
-  }
-};
-
-
-
-template <> struct matrix_traits<MatrixXd>
-{
-  using index_t = typename MatrixXd::Index;
-  using scalar_t = typename MatrixXd::Scalar;
-  static index_t columns(const MatrixXd & m) { return m.cols(); }
-  static index_t rows(const MatrixXd & m) { return m.rows(); }
-  static scalar_t get(const MatrixXd & m, index_t row, index_t col) { return m(row, col); }
-  static void set(MatrixXd & m, index_t row, index_t col, scalar_t val) { m(row, col) = val; }
-};
-
-template <> struct matrix_traits<MyMatrix>
-{
-  using index_t = int;
-  using scalar_t = double;
-  static index_t columns(const MyMatrix & m) { return m.columns; }
-  static index_t rows(const MyMatrix & m) { return m.rows; }
-  static auto get(const MyMatrix & m, index_t row, index_t col) { return m(row, col); }
-  static void set(MyMatrix & m, index_t row, index_t col, double val) { m(row, col) = val; }
-};
 
 int main()
 {
@@ -113,14 +70,14 @@ int main()
 
   // again with my own matrix class
 
-  MyMatrix mobjectiveFunction;
+  MyMatrix<float> mobjectiveFunction;
   mobjectiveFunction.resize(4, 1);
   mobjectiveFunction(0, 0) = 1;
   mobjectiveFunction(1, 0) = 1;
   mobjectiveFunction(2, 0) = 1;
   mobjectiveFunction(3, 0) = 1;
 
-  MyMatrix mconstraints;
+  MyMatrix<float> mconstraints;
   mconstraints.resize(3, 5);
   mconstraints(0, 0) = 1;
   mconstraints(0, 1) = 1;
@@ -140,11 +97,11 @@ int main()
   mconstraints(2, 3) = 1;
   mconstraints(2, 4) = 20;
 
-  SimplexSolver<MyMatrix> solver3(SIMPLEX_MINIMIZE, mobjectiveFunction, mconstraints);
+  SimplexSolver<MyMatrix<float>> solver3(SIMPLEX_MINIMIZE, mobjectiveFunction, mconstraints);
 
   switch (solver3.hasSolution())
   {
-    case SimplexSolver<MyMatrix>::SOL_FOUND:
+    case SimplexSolver<MyMatrix<float>>::SOL_FOUND:
       {
         cout << "The minimum is: " << solver3.getOptimum() << endl;
         auto sol = solver3.getSolution();
@@ -152,7 +109,7 @@ int main()
       }
       break;
 
-    case SimplexSolver<MyMatrix>::SOL_NONE:
+    case SimplexSolver<MyMatrix<float>>::SOL_NONE:
       cout << "The linear problem has no solution.\n";
       break;
 
