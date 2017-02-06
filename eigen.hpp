@@ -4,6 +4,8 @@
 
 namespace simplex {
 
+/// matrix_traits specialisation for dense eigen matrices. All completely dynamic matricies
+/// with float, double or long double can be just used with this... see example
 template <class T> struct matrix_traits<Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>>
 {
   using index_t = typename Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic>::Index;

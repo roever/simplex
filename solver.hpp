@@ -1,23 +1,3 @@
-/*
-    Simple Simplex Solver Class
-    Copyright (C) 2012  Tamas Bolner
-	For more information, visit: http://blog.bolner.hu/2012/08/22/simplex/
-    Adapted for modern C++ (C) 2017 Andreas Roever
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 #pragma once
 
 #include <cstdint>
@@ -25,6 +5,20 @@
 
 namespace simplex {
 
+/// Trait class for the matrix operations needed by the solver class, for an example
+/// implementation look at the header "eigen.hpp" or "matrix.hpp"
+///
+/// You must provide the following members for your matrix type M:
+/// - index_t type to use for indexing the matrix... probably usually int, except if you really
+///           have huge matricies... but then this solver is probably not what you need
+/// - scalar_t type used for the numerical values. Most likely float or double. These values are
+///            supposedly stored in the matrix and are used by the Solver for all numerical calculations
+///            there must be a numeric_limits specialisation for scalar_t available
+/// - static index_t columns(const M & m) return the number of columns of matrix m
+/// - static index_t rows(const M & m) return number of rows of matrix m
+/// - static scalar_t get(const M & m, index_t row, index_t col) return value in the given row and column of matrix m
+/// - static void set(M & m, index_t row, index_t col, scalar_t val) set value in m to val
+/// - static void resize(M & m, index_t rows, index_t cols) resize m to the given size and !!IMPORTANT!! zero all values
 template <class M> struct matrix_traits;
 
 /// Solve unequality systems using the simplex method
@@ -46,8 +40,8 @@ class Solver
     };
 
     enum Mode {
-      MODE_MINIMIZE,
-      MODE_MAXIMIZE
+      MODE_MINIMIZE,   ///< minimize objective function, constraints are assumed to be of form a11*x1+a12*x2+... >= b1
+      MODE_MAXIMIZE    ///< maximize objective function, constraints are assumed to be of form a11*x1+a12*x2+... <= b1
     };
 
   private:
