@@ -275,10 +275,7 @@ class SimplexSolver
         // Maximize
         matrix_traits<M>::resize(tableau, numberOfConstraints + 1, numberOfVariables + numberOfConstraints + 1);
 
-        // Fill with zeros
-        for (index_t i = 0; i < matrix_traits<M>::rows(tableau); i++)
-          for (index_t j = 0; j < matrix_traits<M>::columns(tableau); j++)
-            matrix_traits<M>::set(tableau, i, j, 0);
+        // resize is assumed to fill the whole matrix with zeros
 
         for (index_t i = 0; i < numberOfVariables; i++)
           matrix_traits<M>::set(tableau, 0, i, -matrix_traits<M>::get(objectiveFunction, i, 0));
@@ -325,10 +322,6 @@ class SimplexSolver
       {
         // Minimize: construct the Dual problem
         matrix_traits<M>::resize(tableau, numberOfVariables + 1, numberOfVariables + numberOfConstraints + 1);
-
-        for (index_t i = 0; i < matrix_traits<M>::rows(tableau); i++)
-          for (index_t j = 0; j < matrix_traits<M>::columns(tableau); j++)
-            matrix_traits<M>::set(tableau, i, j, 0);
 
         for (index_t i = 0; i < numberOfConstraints; i++)
           matrix_traits<M>::set(tableau, 0, i, -matrix_traits<M>::get(constraints, i, numberOfVariables));

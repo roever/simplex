@@ -17,6 +17,7 @@ class MyMatrix
 
   void resize(int r, int c)
   {
+    values.clear();
     values.resize(c*r);
     rows = r;
     columns = c;
