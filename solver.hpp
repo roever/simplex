@@ -56,6 +56,15 @@ class Solver
     using index_t = typename matrix_traits<M>::index_t;
     using scalar_t = typename matrix_traits<M>::scalar_t;
 
+    static constexpr bool closeTo1(scalar_t v)
+    {
+      return (scalar_t)(1)-10*std::numeric_limits<scalar_t>::epsilon() <= v && v <= (scalar_t)(1)+10*std::numeric_limits<scalar_t>::epsilon();
+    }
+    constexpr bool closeTo0(scalar_t v, scalar_t epsilon)
+    {
+      return -epsilon <= v && v <= epsilon;
+    }
+
     enum SolutionType foundSolution;
     scalar_t optimum;
     M solution;  // a vector with one column with the solution
@@ -69,7 +78,7 @@ class Solver
     // column the column selected and to find the pivot row in
     // pivot returns the number of the pivot row, only valid when the function returns true
     // the function returns true, if a row has been found
-    bool findPivot_min(const M & tableau, index_t column, index_t & pivot)
+    bool findPivot_min(const M & tableau, index_t column, index_t & pivot, scalar_t epsilon)
     {
       auto constantColumn = matrix_traits<M>::columns(tableau) - 1;
       index_t minIndex = 0;
@@ -78,7 +87,7 @@ class Solver
 
       for (index_t i = 1; i < matrix_traits<M>::rows(tableau); i++)
       {
-        if (matrix_traits<M>::get(tableau, i, column) != 0)
+        if (!closeTo0(matrix_traits<M>::get(tableau, i, column), epsilon))
         {
           scalar_t ratio = matrix_traits<M>::get(tableau, i, constantColumn) / matrix_traits<M>::get(tableau, i, column);
           if (ratio >= 0)
@@ -89,7 +98,7 @@ class Solver
               minIndex = i;
               minRatio = ratio;
             }
-            else if ((ratio == 0) && (minRatio == 0))
+            else if ((closeTo0(ratio, epsilon)) && (closeTo0(minRatio, epsilon)))
             {
               // 0/negative < 0/positive
               if (matrix_traits<M>::get(tableau, i, constantColumn) < matrix_traits<M>::get(tableau, minIndex, constantColumn))
@@ -111,7 +120,7 @@ class Solver
     // tableau is the simplex tableau to work on
     // variableNum The number of variables (dimensions)
     // returns the solution type for the found solution
-    SolutionType simplexAlgorithm(M & tableau, index_t variableNum)
+    SolutionType simplexAlgorithm(M & tableau, index_t variableNum, scalar_t epsilon)
     {
       while (true)
       {
@@ -130,7 +139,7 @@ class Solver
 
         // Find pivot row
         index_t pivotRow;
-        if (!findPivot_min(tableau, pivotColumn, pivotRow))
+        if (!findPivot_min(tableau, pivotColumn, pivotRow, epsilon))
         {
           //no solution
           return SOL_NONE;
@@ -143,8 +152,6 @@ class Solver
           matrix_traits<M>::set(tableau, pivotRow, j,
               matrix_traits<M>::get(tableau, pivotRow, j) / div);
         }
-
-        matrix_traits<M>::set(tableau, pivotRow, pivotColumn, 1); // For possible precision issues
         for (index_t i = 0; i < matrix_traits<M>::rows(tableau); i++)
         {
           if (i != pivotRow)
@@ -155,7 +162,6 @@ class Solver
               matrix_traits<M>::set(tableau, i,  j,
                   matrix_traits<M>::get(tableau, i, j) - matrix_traits<M>::get(tableau, pivotRow, j) * val);
             }
-            matrix_traits<M>::set(tableau, i, pivotColumn, 0);  // For possible precision issues
           }
         }
       }
@@ -173,14 +179,14 @@ class Solver
     // column to work on
     // returns the row with the one 1 for the column in row
     // returns true, if such row has been found, false otherwise
-    bool getPivotRow(const M & tableau, index_t column, index_t & row)
+    bool getPivotRow(const M & tableau, index_t column, index_t & row, scalar_t epsilon)
     {
       index_t one_row = -1;
       bool found = false;
 
       for (index_t i = 1; i < matrix_traits<M>::rows(tableau); i++)
       {
-        if (matrix_traits<M>::get(tableau, i, column) == 1)
+        if (closeTo1(matrix_traits<M>::get(tableau, i, column)))
         {
           if (found)
           {
@@ -192,7 +198,7 @@ class Solver
             found = true;
           }
         }
-        else if (matrix_traits<M>::get(tableau, i, column) != 0)
+        else if (!closeTo0(matrix_traits<M>::get(tableau, i, column), epsilon))
         {
           return false;
         }
@@ -212,12 +218,17 @@ class Solver
     /// \param constraints full matrix for the constraints. Contains also the righthand-side values. The first
     ///        few columns are the coefficients of the constraints, the last column the right hand side
     ///        depending on mode, the inequalities are either all > rhs (MODE_MINIMIZE) or < rhs
+    /// \param epsilon the limit for values to be assumed equal to zero. This value depends on the range for your
+    ///        constraints and your objective function. It should be some orders of magnitude below the smallest
+    ///        significant digits. There is a default value that should be good for anything in the range or 1000 down to
+    ///        1/1000... so "normal values"
     ///
     /// \note There are all kinds of constraints that must be fulfilled for simplex to work, look them up
     ///       in the literature, e.g. number of rows in objective functions must be identical to the number
     ///       of columns in the constraints plus one, the one additional column contains the boundaries
     ///       of the constraints, if you want to find out what is wrong
-    Solver(Mode mode, const M & objectiveFunction, const M & constraints) : optimum(0)
+    Solver(Mode mode, const M & objectiveFunction, const M & constraints, scalar_t
+        epsilon = std::numeric_limits<scalar_t>::epsilon() * 1000) : optimum(0)
     {
       index_t numberOfVariables = matrix_traits<M>::rows(objectiveFunction);
       index_t numberOfConstraints = matrix_traits<M>::rows(constraints);
@@ -247,7 +258,7 @@ class Solver
       }
 
       for (index_t i = 0; i < numberOfVariables; i++)
-        if (objectiveFunction(i, 0) == 0)
+        if (closeTo0(objectiveFunction(i, 0), epsilon))
         {
           foundSolution = SOL_ERR_OBJ_COEFF;
           return;
@@ -285,7 +296,7 @@ class Solver
         }
 
         // Maximize original problem
-        foundSolution = simplexAlgorithm(tableau, numberOfVariables);
+        foundSolution = simplexAlgorithm(tableau, numberOfVariables, epsilon);
 
         if (foundSolution != SOL_NONE)
         {
@@ -297,7 +308,7 @@ class Solver
           {
             index_t temp;
 
-            if (getPivotRow(tableau, i, temp))
+            if (getPivotRow(tableau, i, temp, epsilon))
             {
               // Basic variable
               matrix_traits<M>::set(solution, i, 0, matrix_traits<M>::get(tableau, temp, constantColumn));
@@ -331,7 +342,7 @@ class Solver
         }
 
         // Maximize the dual of the minimization problem
-        foundSolution = simplexAlgorithm(tableau, numberOfConstraints);
+        foundSolution = simplexAlgorithm(tableau, numberOfConstraints, epsilon);
 
         if (foundSolution != SOL_NONE)
         {
