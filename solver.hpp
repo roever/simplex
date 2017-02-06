@@ -23,31 +23,31 @@
 #include <cstdint>
 #include <limits>
 
-#define SIMPLEX_MINIMIZE 1
-#define SIMPLEX_MAXIMIZE 2
-
-
+namespace simplex {
 
 template <class M> struct matrix_traits;
-
 
 /// Solve unequality systems using the simplex method
 /// \tparam M a matrix class used to store the problem and the solution, you have to provide
 ///           a specialisation of struct matrix_traits for the matrix type you want to use
 template <class M>
-class SimplexSolver
+class Solver
 {
   public:
     enum SolutionType {
       SOL_FOUND,             ///< at least one solution found
       SOL_NONE,              ///< No solution has been found
-      SOL_ERR_MODE,          ///< invalid value for the 'mode' parameter
       SOL_ERR_OBJ_COLUMN,    ///< objective function must contain exactly one column
       SOL_ERR_OBJ_ROWS,      ///< The coefficient vector of the objective function must contain at least one row.
       SOL_ERR_OBJ_COEFF,     ///< One of the coefficients of the objective function is zero.
       SOL_ERR_CONSTR_ROWS,   ///< The constraint matrix must contain at least one row.
       SOL_ERR_CONSTR_COLUMN, ///< The constraint matrix must contain one column more than there are number of variables
       SOL_ERR_CONSTR_RHS,    ///< All righthand-side coefficients of the constraint matrix must be non-negative.
+    };
+
+    enum Mode {
+      MODE_MINIMIZE,
+      MODE_MAXIMIZE
     };
 
   private:
@@ -206,28 +206,21 @@ class SimplexSolver
 
     /// Try to solve the given problem
     ///
-    /// \param mode This can be one of these: SIMPLEX_MINIMIZE, SIMPLEX_MAXIMIZE
+    /// \param mode choose to either maximize or minimize objective function
     /// \param objectiveFunction The coefficients of the objective function that is either minimizes or maximized, it must
     ///        be a column matrix with as many rows as there are variables
     /// \param constraints full matrix for the constraints. Contains also the righthand-side values. The first
     ///        few columns are the coefficients of the constraints, the last column the right hand side
-    ///        depending on mode, the inequalities are either all > rhs (SIMPLES_MINIMIZE) or < rhs
+    ///        depending on mode, the inequalities are either all > rhs (MODE_MINIMIZE) or < rhs
     ///
     /// \note There are all kinds of constraints that must be fulfilled for simplex to work, look them up
     ///       in the literature, e.g. number of rows in objective functions must be identical to the number
     ///       of columns in the constraints plus one, the one additional column contains the boundaries
     ///       of the constraints, if you want to find out what is wrong
-    SimplexSolver(int mode, const M & objectiveFunction, const M & constraints) : optimum(0)
+    Solver(Mode mode, const M & objectiveFunction, const M & constraints) : optimum(0)
     {
       index_t numberOfVariables = matrix_traits<M>::rows(objectiveFunction);
       index_t numberOfConstraints = matrix_traits<M>::rows(constraints);
-
-      // Validate input parameters
-      if (mode != SIMPLEX_MINIMIZE && mode != SIMPLEX_MAXIMIZE)
-      {
-        foundSolution = SOL_ERR_MODE;
-        return;
-      }
 
       if (matrix_traits<M>::columns(objectiveFunction) != 1)
       {
@@ -270,7 +263,7 @@ class SimplexSolver
 
       M tableau;
 
-      if (mode == SIMPLEX_MAXIMIZE)
+      if (mode == MODE_MAXIMIZE)
       {
         // Maximize
         matrix_traits<M>::resize(tableau, numberOfConstraints + 1, numberOfVariables + numberOfConstraints + 1);
@@ -370,3 +363,6 @@ class SimplexSolver
     ///         columns as there were variables in the problem
     const M & getSolution() const { return solution; }
 };
+
+}
+

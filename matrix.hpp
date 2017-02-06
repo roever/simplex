@@ -2,8 +2,10 @@
 
 #include <vector>
 
+namespace simplex {
+
 template <class T>
-class MyMatrix
+class Matrix
 {
   public:
 
@@ -26,14 +28,15 @@ class MyMatrix
 
 
 
-template <class T> struct matrix_traits<MyMatrix<T>>
+template <class T> struct matrix_traits<Matrix<T>>
 {
   using index_t = int;
   using scalar_t = double;
-  static index_t columns(const MyMatrix<T> & m) { return m.columns; }
-  static index_t rows(const MyMatrix<T> & m) { return m.rows; }
-  static auto get(const MyMatrix<T> & m, index_t row, index_t col) { return m(row, col); }
-  static void set(MyMatrix<T> & m, index_t row, index_t col, double val) { m(row, col) = val; }
-  static void resize(MyMatrix<T> & m, index_t rows, index_t cols) { m.resize(rows, cols); }
+  static index_t columns(const Matrix<T> & m) { return m.columns; }
+  static index_t rows(const Matrix<T> & m) { return m.rows; }
+  static auto get(const Matrix<T> & m, index_t row, index_t col) { return m(row, col); }
+  static void set(Matrix<T> & m, index_t row, index_t col, double val) { m(row, col) = val; }
+  static void resize(Matrix<T> & m, index_t rows, index_t cols) { m.resize(rows, cols); }
 };
 
+}
